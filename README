@@ -1,0 +1,85 @@
+Jeremy Lowery
+Last networking project aka tcp application
+prof is DR. Frye
+purpose is to describe my application and document any quirks that should be
+known
+
+
+Four files: Server.c Client.c README makefile
+
+Notes: (Skip this section if you are short on time.)
+
+This was an extremely challenging assignment, after over 100 hours working on it(and losing
+my source files) I am still not happy with this. I plan to continue working on it, my intent
+was to use this at home on my personal backup server. 
+
+There are still problems with the Download and the DIR commands under VERY specific
+conditions. I am not pleased to turn an assignment in like this, but I have to. I gave it my
+best and am hoping that it is at least good enough for a b in this state. If you have time,
+which I know you are short on also, could you see if you could figure out why SOMETIMES
+I recieve a strange character in the middle of files. This makes them diff incorectly and
+I can't find the cause. Aslo, in /home/KUTZTOWN/parson I cannot DIR correctly. The client gets a SIGPIPE and exits because the socket has been closed for some reason. I spent three days
+trying to figure that one out and I had to admit defeat.
+
+END NOTES!
+
+Testing: (Also tested this with multiple clients connected)
+CD permission testing, /home/KUTZTOWN/parson/bin = Permission denied
+CD other student accounts /home/STUDENTS/* = accesable
+CD nothing = No such file or directory
+CD not a path = No such file or directory
+CD file = Not a directory
+
+DISCONNECT recieves Goodbye message and disconnects the client.
+
+DIR works, not much testing to be done here
+
+DOWNLOAD forkOutput.c copies the file into the clients working directory(I did multiple files)
+DOWNLOAD not a file, No such file or directory
+
+
+Added a help command due to I needed reminding what I called the commands
+it returns a list of commands.
+
+
+Server port is optional. Client only needs an address but both can take a port.
+
+Overview of the server:
+
+It does all the fun tcp server stuff like socket(), bind(), listen(),
+It then has a loop to accept connections, which forks for each accepted connection
+The parent closes the accepted socket after making the child.
+
+I have a function that handle the catching of signals(to shut down sockets and gently kill server)
+
+I handle the child's input, with one write for the greeting. Then it recv() information from the socket
+Inside that function I handle where each of the commands go: CD, DIR, DOWNLOAD, DISCONNECT.
+
+
+All but disconnect have thier own function.
+DIR, uses opendir() and prints back a readdir().
+
+DOWNLOAD, I have it sending files in chunks of 512 I thought this would be better for sending things quickly instead of line by line.
+it uses two loops to make sure that all the data is being sent.
+The server sends in chunks of 1024
+CD, uses chdir() then prints out a getcwd()
+
+All output, with the exception of file writing, is done with a function called 
+handle_child_out, which sends the length of what it is told to send, then the message.
+
+DESICIONS:
+
+How will the server indicate the end of the directory listing?
+After the directory list the server sends "End of Directory List."
+
+
+What will server response be for sucessful and unsucessful cd commands?
+The server sends back the current working directory on sucessful cd.
+The server sends back the strerror(errno) on unsucessful. 
+
+
+How does the client know when the server has completed sending the file?
+I send the files length before attempting to revieve the file, so the client keeps trying to 
+get information until the file length is reached.
+
+
